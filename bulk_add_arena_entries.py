@@ -16,8 +16,8 @@ name_prefix = "NeoArena"
 starting_arena_id = 300   #Used for the Arena ID.
 starting_arena_rank = 300   #Used for the rank texture. This will DECREASE as the ID increases.
 
-starting_account_id = 9800
-starting_npc_chara_id = 99009800    #Used for CharaInitiParam, NpcParam, NpcThinkParam (and its associated LogicID)
+starting_account_id = 19800
+starting_npc_chara_id = 999009800    #Used for CharaInitiParam, NpcParam, NpcThinkParam (and its associated LogicID)
 
 base_fight_data = {
     "missionParamId": 9411,
@@ -84,23 +84,28 @@ base_npcparam_data = get_entry_with_id(baseline_ac, NPCParam_data)
 NPCThink_data = get_csv_list("NpcThinkParam")
 base_npcthink_data = get_entry_with_id(baseline_ac, NPCThink_data)
 
-characters_lines = open(os.path.join(text_directory, "TitleCharacters.fmgmerge.txt")).readlines()
-rankerprofile_lines = open(os.path.join(text_directory, "RankerProfile.fmgmerge.txt")).readlines()
+def remove_empty_lines_before_hash(lines):
+    result = []
+    for i, line in enumerate(lines):
+        if i > 0 and (line.startswith('###') or i == len(lines)-1) and lines[i-1].strip() == '':
+            result.pop()
+        result.append(line)
+    if result[-1].strip() == "":
+        result.pop()
+    return result
+
+characters_lines = remove_empty_lines_before_hash(open(os.path.join(text_directory, "TitleCharacters.fmgmerge.txt")).readlines())
+rankerprofile_lines = remove_empty_lines_before_hash(open(os.path.join(text_directory, "RankerProfile.fmgmerge.txt")).readlines())
 
 def add_description(arena_id, text):
-    rankerprofile_lines.append("\n")
     rankerprofile_lines.append(f"###{arena_id}\n")
     rankerprofile_lines.append(text+"\n")
-    rankerprofile_lines.append("\n")
 
 def add_char(account_id, ac_text, pilot_text):
-    characters_lines.append("\n")
     characters_lines.append(f"###{account_id}###{account_id+2}\n")
-    characters_lines.append(ac_text+"\n")
-    characters_lines.append("\n")
+    characters_lines.append(ac_text + "\n")
     characters_lines.append(f"###{account_id+1}###{account_id + 3}\n")
-    characters_lines.append(pilot_text+"\n")
-    characters_lines.append("\n")
+    characters_lines.append(pilot_text + "\n")
 
 def insert_param_entry(dict_obj, dict_list):
     # Find the index where the dict_obj should be inserted based on its ID
@@ -163,11 +168,25 @@ for fight_index in range(number_of_combatants):
 def save_csv(csv_file, data):
     if not csv_file.endswith(".csv"):
         csv_file += ".csv"
+
+    # Write the CSV file with escaped quotes
     with open(os.path.join(param_directory, "edited", csv_file), "w") as file:
         fieldnames = data[0].keys()
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer = csv.DictWriter(file, fieldnames=fieldnames, quoting=csv.QUOTE_NONE, escapechar='\\')
         writer.writeheader()
         writer.writerows(data)
+
+    # Read the CSV file and unescape the quotes
+    with open(os.path.join(param_directory, "edited", csv_file), "r") as file:
+        content = file.read()
+
+    # Replace \" with "
+    content = content.replace('\\"', '"')
+
+    # Write the modified content back to the CSV file
+    with open(os.path.join(param_directory, "edited", csv_file), "w") as file:
+        file.write(content)
+
 
 if not os.path.exists(os.path.join(param_directory, "edited")):
     os.mkdir(os.path.join(param_directory, "edited"))
@@ -182,7 +201,7 @@ save_csv("NpcParam", NPCParam_data)
 save_csv("NpcThinkParam", NPCThink_data)
 
 with open(os.path.join(text_directory, "edited", "TitleCharacters.fmgmerge.txt"), "w") as text_file:
-    text_file.writelines(characters_lines)
+    text_file.writelines(remove_empty_lines_before_hash(characters_lines))
 
 with open(os.path.join(text_directory, "edited", "RankerProfile.fmgmerge.txt"), "w") as text_file:
-    text_file.writelines(rankerprofile_lines)
+    text_file.writelines(remove_empty_lines_before_hash(rankerprofile_lines))
