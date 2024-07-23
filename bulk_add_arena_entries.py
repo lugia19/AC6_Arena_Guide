@@ -22,7 +22,7 @@ starting_npc_chara_id = 999009800    #Used for CharaInitiParam, NpcParam, NpcThi
 base_fight_data = {
     "missionParamId": 9411,
     "menuCategory":20,
-    "introCutsceneId": 23000,
+    "introCutsceneId": 230000,
     "bgmSoundId": 50000,
     "initialCoamReward":1,
     "repeatCoamReward":1,
